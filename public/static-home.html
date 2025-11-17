@@ -416,12 +416,10 @@
             resolve(true);
           });
 
-          iframe.onload = () => {
-            // iframe 加载完成，发送命令
-            iframe.contentWindow.postMessage(
-              {type: "MIGRATE_REQUEST"},
-              OLD_ORIGIN
-            );
+          iframe.onload = function () {
+            setTimeout(()=>{
+              iframe.contentWindow.postMessage({type: "REQUEST_MIGRATION_DATA"}, OLD_ORIGIN);
+            },3000)
           };
         });
       }

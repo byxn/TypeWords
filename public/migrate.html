@@ -35,6 +35,12 @@
 
   let dbReadyPromise = null;
   let name = 'keyval-store';
+  let keys = [
+    'type-words-app-version',
+    'typing-word-dict',
+    'typing-word-setting',
+    'typing-word-files'
+  ]
 
   function openDB(dbName, keys) {
     if (dbReadyPromise) return dbReadyPromise;
@@ -59,7 +65,7 @@
     return dbReadyPromise;
   }
 
-  openDB(name)
+  openDB(name, keys)
 
   // --- localStorage 读取 ---
   function readLocalStorageKeys(keys) {
@@ -71,12 +77,7 @@
   }
 
   // --- IndexedDB（兼容 idb-keyval）读取 ---
-  function readIndexedDBCompatible(dbName, keys = [
-    'type-words-app-version',
-    'typing-word-dict',
-    'typing-word-setting',
-    'typing-word-files'
-  ]) {
+  function readIndexedDBCompatible(dbName, keys) {
     return new Promise(async (resolve) => {
       const db = await openDB(dbName, keys);
       const stores = Array.from(db.objectStoreNames);
