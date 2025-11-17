@@ -326,111 +326,125 @@
     </script>
 
     <script>
-      function migrateFromOldDomain() {
+      // 旧域名
+      const OLD_ORIGIN = "https://2study.top";
+
+      // 需要迁移的 IndexedDB store 名称
+      const IDB_STORE_NAMES = [
+        "type-words-app-version",
+        "typing-word-dict",
+        "typing-word-setting",
+        "typing-word-files",
+      ];
+
+      // 需要迁移的 localStorage key
+      const LS_KEYS = [
+        "PracticeSaveWord",
+        "PracticeSaveArticle"
+      ];
+      let key = 'keyval-store'
+
+      // 打开或创建新的 IndexedDB
+      function openIndexedDB() {
         return new Promise((resolve, reject) => {
-          const OLD_ORIGIN = 'https://2study.top';
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = OLD_ORIGIN + '/migrate.html';
+          const request = indexedDB.open(key, 1);
 
-          // 超时保护
-          const TIMEOUT = 15000;
-          const timeoutId = setTimeout(() => {
-            cleanup();
-            reject(new Error('迁移超时：未收到老域名响应'));
-          }, TIMEOUT);
-
-          // 确保先监听消息
-          function messageHandler(e) {
-            try {
-              // 校验来源
-              if (e.origin !== OLD_ORIGIN) return;
-              if (!e.data || e.data.type !== 'responseData') return;
-
-              // 写 localStorage
-              const local = e.data.localStorageData || {};
-              for (const key in local) {
-                if (local[key] !== null) localStorage.setItem(key, local[key]);
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            IDB_STORE_NAMES.forEach((storeName) => {
+              if (!db.objectStoreNames.contains(storeName)) {
+                db.createObjectStore(storeName);
               }
-
-              // 写 IndexedDB（简单实现：覆盖写入）
-              const indexed = e.data.indexedDBData || {};
-              const req = indexedDB.open('keyval-store', 1);
-
-              const keys = ['typing-word-dict', 'typing-word-setting', 'typing-word-files', 'type-words-app-version'];
-              req.onupgradeneeded = function (ev) {
-                const db = ev.target.result;
-                keys.forEach(name => {
-                  if (!db.objectStoreNames.contains(name)) {
-                    db.createObjectStore(name, {autoIncrement: true});
-                  }
-                });
-              };
-              req.onsuccess = function (ev) {
-                const db = ev.target.result;
-                const tx = db.transaction(keys, 'readwrite');
-                tx.oncomplete = function () {
-                  clearTimeout(timeoutId);
-                  cleanup();
-                  resolve(true);
-                };
-                tx.onerror = function () {
-                  clearTimeout(timeoutId);
-                  cleanup();
-                  reject(new Error('写入 IndexedDB 出错'));
-                };
-                for (const storeName in indexed) {
-                  const items = indexed[storeName];
-                  if (Array.isArray(items)) {
-                    const store = tx.objectStore(storeName);
-                    items.forEach(item => {
-                      // 如果你的对象有主键 id，请改用 put(item, id)
-                      store.put(item);
-                    });
-                  }
-                }
-              };
-              req.onerror = function () {
-                clearTimeout(timeoutId);
-                cleanup();
-                reject(new Error('打开 IndexedDB 失败'));
-              };
-            } catch (err) {
-              clearTimeout(timeoutId);
-              cleanup();
-              reject(err);
-            }
-          }
-
-          function cleanup() {
-            window.removeEventListener('message', messageHandler);
-            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-          }
-
-          window.addEventListener('message', messageHandler);
-
-          // 把 iframe 插入 DOM，等待加载完成再发请求
-          iframe.onload = function () {
-            // 此时 iframe.contentWindow 应该可用，向老域名发送请求
-            try {
-              iframe.contentWindow.postMessage({type: 'requestData'}, OLD_ORIGIN);
-            } catch (err) {
-              clearTimeout(timeoutId);
-              cleanup();
-              reject(err);
-            }
+            });
           };
 
-          document.body.appendChild(iframe);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
         });
       }
 
-      // // 使用示例
-      // migrateFromOldDomain().then(() => {
-      //   console.log('迁移成功');
-      // }).catch(err => {
-      //   console.error('迁移失败', err);
-      // });
+      // 写入数据到 IndexedDB
+      async function writeToIndexedDB(data) {
+        const db = await openIndexedDB();
+
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE_NAMES, "readwrite");
+
+          for (const storeName of IDB_STORE_NAMES) {
+            const store = tx.objectStore(storeName);
+            const value = data.indexedDB[storeName];
+            if (value !== undefined) {
+              store.put(value, "value");
+            }
+          }
+
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      // 写入 LocalStorage
+      function writeToLocalStorage(data) {
+        for (const key of LS_KEYS) {
+          if (data.localStorage[key] !== undefined) {
+            localStorage.setItem(key, data.localStorage[key]);
+          }
+        }
+      }
+
+      // ---- 主逻辑 ----
+
+      async function migrateFromOldSite() {
+        return new Promise((resolve) => {
+          // 创建隐藏 iframe
+          const iframe = document.createElement("iframe");
+          iframe.style.display = "none";
+          iframe.src = `${OLD_ORIGIN}/migrate.html`;
+          document.body.appendChild(iframe);
+
+          // 接收旧域名的数据
+          window.addEventListener("message", async (event) => {
+            if (event.data.type !== "MIGRATE_RESULT") return;
+            const payload = event.data.payload;
+            // 写入 LocalStorage
+            writeToLocalStorage(payload);
+            // 写入 IndexedDB
+            await writeToIndexedDB(payload);
+            // 清理 iframe
+            iframe.remove();
+
+            resolve(true);
+          });
+
+          iframe.onload = () => {
+            // iframe 加载完成，发送命令
+            iframe.contentWindow.postMessage(
+              {type: "MIGRATE_REQUEST"},
+              OLD_ORIGIN
+            );
+          };
+        });
+      }
+
+      // 自动启动迁移（只执行一次）
+      (async () => {
+        // 避免重复迁移
+        if (localStorage.getItem("__migrated_from_2study_top__")) {
+          console.log("数据已迁移过");
+          return;
+        }
+
+        console.log("开始从旧域名迁移数据…");
+
+        try {
+          await migrateFromOldSite();
+          localStorage.setItem("__migrated_from_2study_top__", "1");
+          console.log("迁移完成");
+        } catch (e) {
+          console.error("迁移失败", e);
+        }
+      })();
+
 
       if (location.href === 'https://typewords.cc/') {
         document.onload = function () {

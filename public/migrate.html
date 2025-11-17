@@ -1,62 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>Migrate Data</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TypeWords 数据迁移</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; }
+        pre { background: #f7f7f7; padding: 10px; border-radius: 4px; }
+    </style>
 </head>
 <body>
-<script>
-  async function readIndexedDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('keyval-store', 1); // 你的数据库名
-      request.onsuccess = function (event) {
-        const db = event.target.result;
-        const keys = ['typing-word-dict', 'typing-word-setting', 'typing-word-files','type-words-app-version'];
-        const tx = db.transaction(keys, 'readonly');
-        const result = {};
+<h2>TypeWords 数据迁移（旧域名）</h2>
+<p>等待新域名发送迁移指令 ...</p>
+<pre id="log"></pre>
 
-        let count = 0;
-        keys.forEach((storeName) => {
-          const store = tx.objectStore(storeName);
-          const allRequest = store.getAll();
-          allRequest.onsuccess = function (e) {
-            result[storeName] = e.target.result;
-            count++;
-            if (count === keys.length) {
-              resolve(result);
-            }
-          };
-          allRequest.onerror = function (e) {
-            result[storeName] = null;
-            count++;
-            if (count === keys.length) resolve(result);
-          };
+<script>
+  function log(msg) {
+    console.log(msg);
+    document.getElementById('log').textContent += msg + "\n";
+  }
+
+  // --- localStorage 读取 ---
+  function readLocalStorageKeys(keys) {
+    const out = {};
+    keys.forEach(k => { out[k] = localStorage.getItem(k); });
+    return out;
+  }
+
+  // --- IndexedDB（兼容 idb-keyval）读取 ---
+  function readIndexedDBCompatible(dbName, keys = [
+    'type-words-app-version',
+    'typing-word-dict',
+    'typing-word-setting',
+    'typing-word-files'
+  ]) {
+    return new Promise((resolve) => {
+      const openReq = indexedDB.open(dbName);
+
+      openReq.onerror = tryOpenKeyvalDefault;
+
+      openReq.onsuccess = function () {
+        const db = openReq.result;
+        const stores = Array.from(db.objectStoreNames);
+
+        if (stores.length === 0) {
+          db.close();
+          tryOpenKeyvalDefault();
+          return;
+        }
+
+        if (stores.length === 1 && stores[0] === 'keyval') {
+          readFromKeyvalDB(db).then(result => {
+            db.close(); resolve(result);
+          });
+        } else {
+          readFromMultipleStores(db, stores).then(result => {
+            db.close(); resolve(result);
+          });
+        }
+      };
+
+      function tryOpenKeyvalDefault() {
+        const req = indexedDB.open('keyval');
+        req.onerror = () => resolve({ indexedDB: {}, reason: 'no-db' });
+        req.onsuccess = function () {
+          const db2 = req.result;
+          readFromKeyvalDB(db2).then(result => {
+            db2.close(); resolve(result);
+          });
+        };
+      }
+
+      function readFromKeyvalDB(db) {
+        return new Promise((res) => {
+          const tx = db.transaction('keyval', 'readonly');
+          const store = tx.objectStore('keyval');
+
+          const out = {};
+          let finished = 0;
+          keys.forEach(k => {
+            const r = store.get(k);
+            r.onsuccess = () => {
+              out[k] = r.result ?? null;
+              if (++finished === keys.length) res({ indexedDB: out });
+            };
+            r.onerror = () => {
+              out[k] = null;
+              if (++finished === keys.length) res({ indexedDB: out });
+            };
+          });
         });
-      };
-      request.onerror = function (e) {
-        resolve({});
-      };
+      }
+
+      function readFromMultipleStores(db, stores) {
+        return new Promise(res => {
+          const result = {};
+          let count = 0;
+          stores.forEach(storeName => {
+            try {
+              const tx = db.transaction(storeName, 'readonly');
+              const store = tx.objectStore(storeName);
+              const req = store.getAll();
+
+              req.onsuccess = () => {
+                result[storeName] = req.result;
+                if (++count === stores.length) res({ indexedDB: result });
+              };
+              req.onerror = () => {
+                result[storeName] = [];
+                if (++count === stores.length) res({ indexedDB: result });
+              };
+            } catch {
+              result[storeName] = [];
+              if (++count === stores.length) res({ indexedDB: result });
+            }
+          });
+        });
+      }
     });
   }
-  // 监听 postMessage
-  window.addEventListener('message', async (e) => {
-    if (e.data && e.data.type === 'requestData') {
-      const local = {};
-      ['PracticeSaveWord', 'PracticeSaveArticle'].forEach(key => {
-        local[key] = localStorage.getItem(key) || null;
-      });
 
-      const indexed = await readIndexedDB();
+  async function readAllStorageForMigration() {
+    const local = readLocalStorageKeys(['PracticeSaveWord', 'PracticeSaveArticle']);
+    const indexed = await readIndexedDBCompatible('keyval-store');
+    return { localStorage: local, indexedDB: indexed.indexedDB ?? {} };
+  }
 
-      // 回复新域名
-      e.source.postMessage({
-        type: 'responseData',
-        localStorageData: local,
-        indexedDBData: indexed
-      }, e.origin);
+  // =====================
+  // 🔥 自动监听迁移指令
+  // =====================
+  window.addEventListener('message', async (event) => {
+    if (event.data?.type === 'REQUEST_MIGRATION_DATA') {
+      log('收到迁移指令，开始读取本地数据...');
+      const data = await readAllStorageForMigration();
+      log('读取完成，开始发送数据到新域名');
+
+      event.source.postMessage({ type: 'MIGRATE_DATA', payload: data }, event.origin);
+
+      log('已发送迁移数据');
     }
   });
-
 </script>
 </body>
 </html>
