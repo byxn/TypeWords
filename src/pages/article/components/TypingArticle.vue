@@ -300,6 +300,12 @@ function onTyping(e: KeyboardEvent) {
     let currentWord: ArticleWord = currentSentence.words[wordIndex]
     wrong = ''
 
+    const normalize = (s: string) => (settingStore.ignoreCase ? s.toLowerCase() : s).trim()
+    const nameList = (props.article?.nameList ?? []).map(normalize).filter(Boolean)
+    const isNameWord = (w: ArticleWord) => {
+      return w?.type === PracticeArticleWordType.Word && nameList.length > 0 && nameList.includes(normalize(w.word))
+    }
+
     const next = () => {
       isSpace = false;
       input = wrong = ''
@@ -310,7 +316,10 @@ function onTyping(e: KeyboardEvent) {
         currentWord =  currentSentence.words[wordIndex]
         if ([PracticeArticleWordType.Symbol,PracticeArticleWordType.Number].includes(currentWord.type) && settingStore.ignoreSymbol){
           next()
-        }else {
+        } else if (isNameWord(currentWord)) {
+          isSpace = false
+          next()
+        } else {
           emit('nextWord', currentWord);
         }
       } else {
@@ -337,6 +346,13 @@ function onTyping(e: KeyboardEvent) {
       //如果是首句首词
       if (sectionIndex === 0 && sentenceIndex === 0 && wordIndex === 0 && stringIndex === 0) {
         emit('play', {sentence: currentSection[sentenceIndex], handle: false})
+      }
+      if (isNameWord(currentWord)) {
+        isSpace = false
+        const savedTyping = isTyping
+        next()
+        isTyping = false
+        return onTyping(e)
       }
       let letter = e.key
       let key = currentWord.word[stringIndex]

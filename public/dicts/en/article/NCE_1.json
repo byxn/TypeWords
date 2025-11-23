@@ -31,15 +31,15 @@
     "id": "3uh9Iy",
     "title": "Nice to meet you",
     "titleTranslate": "很高兴见到你。",
-    "text": "MR. BLAKE:Good morning. \n\nSTUDENTS:Good morning, Mr. Blake. \n\nMR. BLAKE:This is Miss Sophie Dupont. \n\nSophie is a new student. \n\nShe is French. \n\nMR. BLAKE:Sophie, this is Hans. \n\nHe is German. \n\nHANS:Nice to meet you. \n\nMR. BLAKE:And this is Naoko. \n\nShe's Japanese. \n\nNAOKO:Nice to meet you. \n\nMR. BLAKE:And this is Chang-woo. \n\nHe's Korean. \n\nCHANG-WOO:Nice to meet you. \n\nMR. BLAKE:And this is Luming. \n\nHe is Chinese. \n\nLUMNG:Nice to meet you. \n\nMR. BLAKE:And this is Xiaohui. \n\nShe's Chinese, too. \n\nXIAOHUI:Nice to meet you.",
+    "text": "MR. BLAKE:Good morning.\n\nSTUDENTS:Good morning, Mr. Blake.\n\nMR. BLAKE:This is Miss Sophie Dupont.\n\nSophie is a new student.\n\nShe is French.\n\nMR. BLAKE:Sophie, this is Hans.\n\nHe is German.\n\nHANS:Nice to meet you.\n\nMR. BLAKE:And this is Naoko.\n\nShe's Japanese.\n\nNAOKO:Nice to meet you.\n\nMR. BLAKE:And this is Chang-woo.\n\nHe's Korean.\n\nCHANG-WOO:Nice to meet you.\n\nMR. BLAKE:And this is Luming.\n\nHe is Chinese.\n\nLUMNG:Nice to meet you.\n\nMR. BLAKE:And this is Xiaohui.\n\nShe's Chinese, too.\n\nXIAOHUI:Nice to meet you.",
     "textTranslate": "布莱克先生：早上好。 \n\n学 生：早上好，布莱克先生。 \n\n布莱克先生：这位是索菲娅.杜邦小姐。 \n\n索菲娅是个新学生。 \n\n她是法国人。 \n\n布莱克先生：索菲娅，这位是汉斯。 \n\n他是德国人。 \n\n汉 斯：很高兴见到你。 \n\n布莱克先生：这位是直子。 \n\n她是日本人。 \n\n直 子：很高兴见到你。 \n\n布莱克先生：这位是昌宇。 \n\n他是韩国人。 \n\n昌 宇：很高兴见到你。 \n\n布莱克先生：这位是鲁明。 \n\n他是中国人。 \n\n鲁 明：很高兴见到你。 \n\n布莱克先生：这位是晓惠。 \n\n她也是中国人。 \n\n晓 惠：很高兴见到你。",
     "newWords": [],
-    "textAllWords": [],
-    "sections": [],
     "audioSrc": "",
     "audioFileId": "",
     "lrcPosition": [],
-    "questions": []
+    "questions": [],
+    "nameList": ["MR. BLAKE", "STUDENTS", "Sophie Dupont", "Sophie", "Hans", "Naoko", "Chang-woo", "Luming", "Xiaohui"],
+    "textAllWords": []
   },
   {
     "id": "13nyyY",
