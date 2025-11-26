@@ -2,10 +2,10 @@
 import { useBaseStore } from "@/stores/base.ts";
 import { useRouter } from "vue-router";
 import BaseIcon from "@/components/BaseIcon.vue";
-import { _getAccomplishDate, _getDictDataByUrl, resourceWrap, shuffle, useNav } from "@/utils";
+import { _getAccomplishDate, _getDictDataByUrl, _nextTick, resourceWrap, shuffle, useNav } from "@/utils";
 import BasePage from "@/components/BasePage.vue";
 import { DictResource, WordPracticeMode } from "@/types/types.ts";
-import { watch } from "vue";
+import { onMounted, watch } from "vue";
 import { getCurrentStudyWord } from "@/hooks/dict.ts";
 import { useRuntimeStore } from "@/stores/runtime.ts";
 import Book from "@/components/Book.vue";
@@ -19,10 +19,11 @@ import PracticeSettingDialog from "@/pages/word/components/PracticeSettingDialog
 import ChangeLastPracticeIndexDialog from "@/pages/word/components/ChangeLastPracticeIndexDialog.vue";
 import { useSettingStore } from "@/stores/setting.ts";
 import { useFetch } from "@vueuse/core";
-import {AppEnv, DICT_LIST, Host, PracticeSaveWordKey} from "@/config/env.ts";
+import { AppEnv, DICT_LIST, Host, PracticeSaveWordKey } from "@/config/env.ts";
 import { myDictList } from "@/apis";
 import PracticeWordListDialog from "@/pages/word/components/PracticeWordListDialog.vue";
 import ShufflePracticeSettingDialog from "@/pages/word/components/ShufflePracticeSettingDialog.vue";
+import introJs from "intro.js";
 
 
 const store = useBaseStore()
@@ -198,12 +199,19 @@ const {
 } = useFetch(resourceWrap(DICT_LIST.WORD.RECOMMENDED)).json()
 
 let isNewHost = $ref(window.location.host === Host)
+
+onMounted(() => {
+  _nextTick(() => {
+    introJs.tour().start();
+  }, 500)
+})
 </script>
 
 <template>
   <BasePage>
     <div class="mb-4" v-if="!isNewHost">
-      新域名已启用，后续请访问 <a href="https://typewords.cc/words?from_old_site=1">https://typewords.cc</a>。当前 2study.top 域名将在不久后停止使用
+      新域名已启用，后续请访问 <a href="https://typewords.cc/words?from_old_site=1">https://typewords.cc</a>。当前
+      2study.top 域名将在不久后停止使用
     </div>
 
     <div class="card flex flex-col md:flex-row gap-8">
@@ -258,7 +266,7 @@ let isNewHost = $ref(window.location.host === Host)
 
         <div class="flex items-center gap-4 mt-2 flex-1" v-else>
           <div class="title">请选择一本词典开始学习</div>
-          <BaseButton type="primary" size="large" @click="router.push('/dict-list')">
+          <BaseButton data-intro='点击这里添加一本词典' type="primary" size="large" @click="router.push('/dict-list')">
             <div class="center gap-1">
               <IconFluentAdd16Regular/>
               <span>选择词典</span>

@@ -1,11 +1,11 @@
 <script setup lang="tsx">
-import {DictId} from "@/types/types.ts";
+import { DictId } from "@/types/types.ts";
 
 import BasePage from "@/components/BasePage.vue";
-import {computed, onMounted, reactive, ref, shallowReactive} from "vue";
-import {useRuntimeStore} from "@/stores/runtime.ts";
-import {_getDictDataByUrl, _nextTick, convertToWord, isMobile, loadJsLib, useNav} from "@/utils";
-import {nanoid} from "nanoid";
+import { computed, onMounted, reactive, ref, shallowReactive } from "vue";
+import { useRuntimeStore } from "@/stores/runtime.ts";
+import { _getDictDataByUrl, _nextTick, convertToWord, isMobile, loadJsLib, sleep, useNav } from "@/utils";
+import { nanoid } from "nanoid";
 import BaseIcon from "@/components/BaseIcon.vue";
 import BaseTable from "@/components/BaseTable.vue";
 import WordItem from "@/components/WordItem.vue";
@@ -13,21 +13,21 @@ import Toast from '@/components/base/toast/Toast.ts'
 import PopConfirm from "@/components/PopConfirm.vue";
 import BackIcon from "@/components/BackIcon.vue";
 import BaseButton from "@/components/BaseButton.vue";
-import {useRoute, useRouter} from "vue-router";
-import {useBaseStore} from "@/stores/base.ts";
+import { useRoute, useRouter } from "vue-router";
+import { useBaseStore } from "@/stores/base.ts";
 import EditBook from "@/pages/article/components/EditBook.vue";
-import {getDefaultDict} from "@/types/func.ts";
+import { getDefaultDict } from "@/types/func.ts";
 import BaseInput from "@/components/base/BaseInput.vue";
 import Textarea from "@/components/base/Textarea.vue";
 import FormItem from "@/components/base/form/FormItem.vue";
 import Form from "@/components/base/form/Form.vue";
 import DeleteIcon from "@/components/icon/DeleteIcon.vue";
-import {getCurrentStudyWord} from "@/hooks/dict.ts";
+import { getCurrentStudyWord } from "@/hooks/dict.ts";
 import PracticeSettingDialog from "@/pages/word/components/PracticeSettingDialog.vue";
-import {useSettingStore} from "@/stores/setting.ts";
-import {MessageBox} from "@/utils/MessageBox.tsx";
-import {AppEnv, Origin, PracticeSaveWordKey} from "@/config/env.ts";
-import {detail} from "@/apis";
+import { useSettingStore } from "@/stores/setting.ts";
+import { MessageBox } from "@/utils/MessageBox.tsx";
+import { AppEnv, Origin, PracticeSaveWordKey } from "@/config/env.ts";
+import { detail } from "@/apis";
 
 const runtimeStore = useRuntimeStore()
 const base = useBaseStore()
@@ -257,14 +257,11 @@ async function addMyStudyList() {
 }
 
 async function startTest() {
-  if (!runtimeStore.editDict.words.length) {
-    loading = true
-    let r = await _getDictDataByUrl(runtimeStore.editDict)
-    runtimeStore.editDict = r
-    loading = false
-  }
+  loading = true
   await base.changeDict(runtimeStore.editDict)
-  nav('word-test/' + store.sdict.id, {})
+  loading = false
+  nav('word-test/' + store.sdict.id)
+
 }
 
 let exportLoading = $ref(false)
@@ -395,7 +392,7 @@ defineRender(() => {
             <div class="dict-header flex justify-between items-center relative">
               <BackIcon class="dict-back z-2"/>
               <div class="dict-title absolute page-title text-align-center w-full">{runtimeStore.editDict.name}</div>
-              <div class="dict-actions flex gap-2">
+              <div class="dict-actions flex">
                 <BaseButton loading={studyLoading || loading} type="info"
                             onClick={() => isEdit = true}>编辑</BaseButton>
                 <BaseButton loading={studyLoading || loading} onClick={addMyStudyList}>学习</BaseButton>

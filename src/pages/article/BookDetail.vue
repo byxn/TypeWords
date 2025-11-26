@@ -183,7 +183,7 @@ function next() {
       <div class="dict-header flex justify-between items-center relative">
         <BackIcon class="dict-back z-2"/>
         <div class="dict-title absolute text-2xl text-align-center w-full">{{ runtimeStore.editDict.name }}</div>
-        <div class="dict-actions flex gap-2">
+        <div class="dict-actions flex">
           <BaseButton v-if="runtimeStore.editDict.custom && runtimeStore.editDict.url" type="info" @click="reset">
             恢复默认
           </BaseButton>

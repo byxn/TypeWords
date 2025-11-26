@@ -234,7 +234,7 @@ onMounted(init)
           </div>
         </div>
 
-        <div class="mt-6 flex gap-3">
+        <div class="mt-6 flex">
           <BaseButton type="primary" @click="next">继续测试</BaseButton>
           <BaseButton type="info" @click="end">结束</BaseButton>
         </div>

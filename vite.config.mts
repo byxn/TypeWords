@@ -45,6 +45,7 @@ export default defineConfig(() => {
             },
           }),
           UnoCSS(),
+          SlidePlugin(),
           isAnalyseBuild ?
             visualizer({
               gzipSize: true,
@@ -53,7 +54,6 @@ export default defineConfig(() => {
               filename: "report.html",
               open: true
             }) : null,
-          SlidePlugin(),
           isCdnBuild ? [
             {
               name: 'inject-cdn-head',
